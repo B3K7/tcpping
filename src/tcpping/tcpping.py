@@ -26,7 +26,7 @@ def signal_handler(signal, frame):
 
 
 @click.command()
-@click.option("--host"       , default="",              help="host")
+@click.option("--host"       , default="google.com",      help="host")
 @click.option("--port"       , default=80,                help="tcp port")
 @click.option("--maxcount"   , default=3,                 help="# of samples")
 @click.option("--intergreen" , default=0,                 help="wait time (sec)")
