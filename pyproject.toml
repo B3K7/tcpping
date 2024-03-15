@@ -1,6 +1,6 @@
 [project]
 name    = "tcpping"
-version = "0.1.0"
+version = "0.1.1"
 authors = [
   { name="B3K7", email="B3K7@github.com" },
 ]
@@ -29,11 +29,7 @@ classifiers = [
     "Intended Audience :: Other Audience",
     "Intended Audience :: System Administrators",
     "Intended Audience :: Telecommunications Industry",
-    "Topic :: Security",
-    "Topic :: Security :: Cryptography",
-    "Topic :: Communications :: File Sharing",
-    "Topic :: Communications :: Email",
-    "Topic :: Communications :: Email :: Email Clients (MUA)",
+    "Topic :: Communications ",
     # Pick your license as you wish (see also "license" above)
     "License :: OSI Approved :: BSD License",
     # Specify the targets here.
@@ -49,10 +45,6 @@ classifiers = [
 
 dependencies = [
     'click',
-    'msal',
-    'requests',
-    'pyjwt',
-    'asn1crypto',
 ]
 keywords=["TCP", "PING", "TCP PING"]
 

@@ -1,6 +1,6 @@
 """
 Threaded Python TCP Ping Test (defaults to port 80, 3 packets)
-Usage: ./tcpping.py host [port] [maxCount]
+Usage: ./tcpping.py host [port] [maxcount]
 - Ctrl-C Exits
 Derived from
   Jonathan Yantis, Blade.            https://github.com/yantisj/tcpping/blob/master/tcpping.py
@@ -30,11 +30,11 @@ def signal_handler(signal, frame):
 @click.option("--port"       , default=80,                help="tcp port")
 @click.option("--maxcount"   , default=3,                 help="# of samples")
 @click.option("--intergreen" , default=0,                 help="wait time (sec)")
-@click.option("--protocol"   , default=6,                 help="protocol number (TCP=6)")
-def tcpping(host,port,maxcount,intergreen,protocol):
+@click.option("--proto"      , default=6,                 help="protocol number (TCP=6)")
+def tcpping(host,port,maxcount,intergreen,proto):
     """
     A 'quick and dirty' tcp ping client
-    """"
+    """
 
     #https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml
     #https://tools.ietf.org/html/rfc793
@@ -43,12 +43,13 @@ def tcpping(host,port,maxcount,intergreen,protocol):
     # Pass/Fail counters
     passed = 0
     failed = 0
-
+    count  = 0
+    
     # Register SIGINT Handler
     signal.signal(signal.SIGINT, signal_handler)
 
     # Loop while less than max count or until Ctrl-C caught
-    while count < maxCount:
+    while count < maxcount:
 
         # Increment Counter
         count += 1
@@ -84,7 +85,7 @@ def tcpping(host,port,maxcount,intergreen,protocol):
             #https://docs.python.org/3/library/socket.html#socket.socket.connect
             s.close()
             print(str(estr), file=sys.stderr)
-            print("\n",file=sys.stderr))
+            print("\n",file=sys.stderr)
             print("%s,%s,%s,%s,%s,%s" % (host, port, proto, (count-1), datetime.datetime.now(),9999))
             failed += 1
         except socket.error as e:
@@ -111,7 +112,7 @@ def tcpping(host,port,maxcount,intergreen,protocol):
             passed += 1
 
         # intergreen rest
-        if count < maxCount:
+        if count < maxcount:
             time.sleep(intergreen)
             #print("sleep %s" % intergreen)
 
