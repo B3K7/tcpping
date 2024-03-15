@@ -66,6 +66,7 @@ def tcpping(host,port,maxcount,intergreen,proto):
             t = threading.Thread(target=s.connect((host, int(port))))
             s_start = timer()
             t.start()     #do thread
+            # wait until the thread terminates
             t.join(timeout=1)
             s_stop = timer()
             s.shutdown(socket.SHUT_RD)
