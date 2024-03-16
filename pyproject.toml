@@ -1,6 +1,6 @@
 [project]
 name    = "tcpping"
-version = "0.1.1"
+version = "0.2.0"
 authors = [
   { name="B3K7", email="B3K7@github.com" },
 ]
@@ -30,9 +30,14 @@ classifiers = [
     "Intended Audience :: System Administrators",
     "Intended Audience :: Telecommunications Industry",
     "Topic :: Communications ",
+    "Topic :: Internet ",
+    "Topic :: System :: Benchmark",
+    "Topic :: System :: Monitoring",
+    "Topic :: System :: Networking :: Monitoring",
     # Pick your license as you wish (see also "license" above)
     "License :: OSI Approved :: BSD License",
     # Specify the targets here.
+    "Operating System :: Microsoft",
     "Operating System :: POSIX",
     "Operating System :: POSIX :: Linux",
     # Specify the Python versions you support here.
@@ -45,6 +50,7 @@ classifiers = [
 
 dependencies = [
     'click',
+    'isodate',
 ]
 keywords=["TCP", "PING", "TCP PING"]
 

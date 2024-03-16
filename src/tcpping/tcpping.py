@@ -1,41 +1,60 @@
 """
 Threaded Python TCP Ping Test (defaults to port 80, 3 packets)
-Usage: ./tcpping.py host [port] [maxcount]
+Usage: ./tcpping.py -h host [-p port] [-s nsamples] [-t timeout] [-i intergreen]
 - Ctrl-C Exits
-Derived from
-  Jonathan Yantis, Blade.            https://github.com/yantisj/tcpping/blob/master/tcpping.py
-  Andrey Belykh, Dundas Software.    https://stackoverflow.com/questions/48009669/using-for-python-tcp-ping-time-measure-difference-from-other-tools
+Purpose:
+    Measure socket.connect() latency.
+    Measure the 3 way tcp handshake [client FoR] to first application gateway.
+    Measure ACK SYN/ACK latency to first appliation gateway.
+
+
+Based on:
+  Jonathan Yantis, Blade.         
+  https://github.com/yantisj/tcpping/blob/master/tcpping.py
+  Andrey Belykh, Dundas Software. 
+  https://stackoverflow.com/questions/48009669/using-for-python-tcp-ping-time-measure-difference-from-other-tools
 TODO:
-   review and/or incorporate Jim Willie, Akamai Technologies.  https://github.com/jwyllie83/tcpping
+   Consider reviewing Willie, Akamai Technologies.  https://github.com/jwyllie83/tcpping
+   Consider the pros and cons of threads vs multiprocessing
 """
 
 import sys
-import os
+#import os
 import errno
 import socket
 import time
 import datetime
+import json
 import signal
 from timeit import default_timer as timer
 import threading
+import isodate
 import click
 
-def signal_handler(signal, frame):
+def signal_handler(signum, frame):
     """ Catch Ctrl-C and Exit """
+    now = datetime.datetime.now().isoformat()
+    name = signal.Signals(signum).name
+    line = {'program':sys.argv[0],'signal':str(signum), 'msg':name, 'time':now}
+    print(json.dumps(line),file=sys.stderr)
     sys.exit(0)
 
 
 @click.command()
-@click.option("--host"       , default="google.com",      help="host")
-@click.option("--port"       , default=80,                help="tcp port")
-@click.option("--maxcount"   , default=3,                 help="# of samples")
-@click.option("--intergreen" , default=0,                 help="wait time (sec)")
-@click.option("--proto"      , default=6,                 help="protocol number (TCP=6)")
-def tcpping(host,port,maxcount,intergreen,proto):
+@click.option("-h","--host"       , default="google.com",      help="target host")
+@click.option("-p","--port"       , default=443,                help="tcp port")
+@click.option("-s","--nsamples"   , default=3,                 help="# of samples to attempt")
+@click.option("-i","--intergreen" , default=0,                 help="wait time (sec)")
+@click.option("-t","--timeout"    , default=1,                 help="socket timeout (sec)")
+def tcpping(host,port,nsamples,intergreen,timeout):
     """
     A 'quick and dirty' tcp ping client
+    Measures socket.connect()
+    Measures the 3 way tcp handshake [client FoR]
+    Measures ACK SYN/ACK latency.
     """
 
+    #todo consider switching to ip ping
     #https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml
     #https://tools.ietf.org/html/rfc793
 
@@ -44,76 +63,83 @@ def tcpping(host,port,maxcount,intergreen,proto):
     passed = 0
     failed = 0
     count  = 0
-    
+
     # Register SIGINT Handler
     signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGHUP, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
 
-    # Loop while less than max count or until Ctrl-C caught
-    while count < maxcount:
+    # Loop while less than nsamples or until Ctrl-C caught
+    while count < nsamples:
 
         # Increment Counter
         count += 1
         success = False
 
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 
-        # 1sec Timeout
-        # todo consider making timeout a parameter
-        s.settimeout(1)
+            s.settimeout(timeout)
+            #s.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 0)
+            #s.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 0)
 
-        # Try to Connect
-        try:
-            t = threading.Thread(target=s.connect((host, int(port))))
-            s_start = timer()
-            t.start()     #do thread
-            # wait until the thread terminates
-            t.join(timeout=1)
-            s_stop = timer()
-            s.shutdown(socket.SHUT_RD)
-            success = True
-            s.close()
+            # Try to Connect
+            try:
+                #wait for connection or raise a TimeoutError
+                t = threading.Thread(target=s.connect((host, int(port))))
 
-            if t.is_alive():
-                t.join()  #wait for thread to return
+                s_start = timer()                      #start timer
+                t.start()                              #do thread
 
-        # todo consider switching to json
-        except socket.timeout as e:
-            s.close()
-            print("Connection timed out!\n", file=sys.stderr)
-            print("%s,%s,%s,%s,%s,%s" % (host, port, proto, (count-1), datetime.datetime.now(), 9999))
-            failed += 1
-        except socket.gaierror as estr:
-            #https://docs.python.org/3/library/socket.html#socket.socket.connect
-            s.close()
-            print(str(estr), file=sys.stderr)
-            print("\n",file=sys.stderr)
-            print("%s,%s,%s,%s,%s,%s" % (host, port, proto, (count-1), datetime.datetime.now(),9999))
-            failed += 1
-        except socket.error as e:
-            #https://docs.python.org/2/library/errno.html
-            s.close()
-            print("Socket Error!\n", file=sys.stderr)
-            print("%s,%s,%s,%s,%s,%s" % (host, port, proto, (count-1), datetime.datetime.now(),9999))
-            failed += 1
-            if e.errno == errno.ECONNREFUSED or e.errno==errno.EHOSTUNREACH:
-                print(os.strerror(e.errno), file=sys.stderr)
-                print("", file=sys.stderr)
-            else:
-                raise
-        except OSError as e:
-            s.close()
-            print("OS Error:\n", file=sys.stderr)
-            print(os.strerror(e.errno), file=sys.stderr)
-            print("%s,%s,%s,%s,%s,%s" % (host, port, proto, (count-1), datetime.datetime.now(),9999))
-            failed += 1
+                t.join(timeout=timeout)                # wait until the thread terminates
+                s_stop = timer()
+                s.shutdown(socket.SHUT_RD)
+                success = True
+
+                if t.is_alive():
+                    t.join()                           #wait for thread to return
+
+            except socket.timeout as e:
+                now = datetime.datetime.now().isoformat()
+                line = {'program':sys.argv[0],'errno':e.errno, 'error':str(e),'msg':"Connection timed out.", 'host':host, 'port':port, 'count':count-1, 'time':now}
+                print(json.dumps(line),file=sys.stderr)
+                failed += 1
+            except socket.gaierror as e:
+                #https://docs.python.org/3/library/socket.html#socket.socket.connect
+                now = datetime.datetime.now().isoformat()
+                line = {'programn':sys.argv[0],'errno':e.errno, 'error':str(e),'msg':"Socket gai error.", 'host':host, 'port':port, 'count':count-1, 'time':now}
+                print(json.dumps(line),file=sys.stderr)
+                failed += 1
+            except socket.error as e:
+                #https://docs.python.org/2/library/errno.html
+                now = datetime.datetime.now().isoformat()
+                failed += 1
+                if e.errno in (errno.ECONNREFUSED, errno.EHOSTUNREACH):
+                    line = {'program':sys.argv[0],'errno':e.errno, 'error':str(e),'msg':"Socket error.", 'host':host, 'port':port, 'count':count-1, 'time':now}
+                    print(json.dumps(line),file=sys.stderr)
+                else:
+                    line = {'program':sys.argv[0],'errno':e.errno,'error':str(e),'msg':"Socket error.", 'host':host, 'port':port, 'count':count-1, 'time':now}
+                    print(json.dumps(line),file=sys.stderr)
+                    raise
+            except OSError as e:
+                now = datetime.datetime.now().isoformat()
+                line = {'program':sys.argv[0],'errno':e.errno, 'error':str(e),'msg':"OS Error..", 'host':host, 'port':port, 'count':count-1, 'time':now}
+                print(json.dumps(line),file=sys.stderr)
+                failed += 1
 
         if success:
-            s_runtime = "%.3f" % (1000 * (s_stop - s_start))
-            print("%s,%s,%s,%s,%s,%s" % (host, port, proto, (count-1), datetime.datetime.now(), s_runtime))
+            s_runtime = isodate.duration_isoformat(datetime.timedelta(seconds=s_stop - s_start))
+            #s_runtime = f"{ms_rt:.3f}"
+            now = datetime.datetime.now().isoformat()
+            # Assume copper conductor is 80% efficient
+            # max reach = 80 [% -  cu wire efficiency]* 299792458 [m/s - Resolution 1, 17th CGPM, 1983 / Giacomo P. IEEE Trans on Instr and Mea. 1985;IM-34:116] * time [round-trip] / 2 [trip]/[round-trip]
+
+            max_reach_cu =  0.8*299792458*(s_stop-s_start)/2   # max copper reach in meters
+            line = {'host':host, 'port':port, 'count':count-1, 'time':now, 'elapsed':s_runtime, 'est_max_reach_cu':f"{max_reach_cu:.2g}"} # estimate max reach to 2 sig figs
+            print(json.dumps(line))
             passed += 1
 
         # intergreen rest
-        if count < maxcount:
+        if count < nsamples:
             time.sleep(intergreen)
             #print("sleep %s" % intergreen)
 
