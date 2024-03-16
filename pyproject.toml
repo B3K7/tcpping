@@ -60,5 +60,15 @@ Repository    = "https://github.com/B3K7/tcpping.git"
 Issues        = "https://github.com/B3K7/tcpping/issues"
 Changelog     = "https://github.com/B3K7/tcpping/blob/master/CHANGELOG.md"
 
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+pythonpath = [
+  "src"
+]
+testpaths = [
+    "tests"
+]
+
 [project.scripts]
 tcpping = "tcpping.tcpping:tcpping"

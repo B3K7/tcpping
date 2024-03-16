@@ -40,13 +40,7 @@ def signal_handler(signum, frame):
     sys.exit(0)
 
 
-@click.command()
-@click.option("-h","--host"       , default="google.com",      help="target host")
-@click.option("-p","--port"       , default=443,                help="tcp port")
-@click.option("-s","--nsamples"   , default=3,                 help="# of samples to attempt")
-@click.option("-i","--intergreen" , default=0,                 help="wait time (sec)")
-@click.option("-t","--timeout"    , default=1,                 help="socket timeout (sec)")
-def tcpping(host,port,nsamples,intergreen,timeout):
+def real_tcpping(host,port,nsamples,intergreen,timeout):
     """
     A 'quick and dirty' tcp ping client
     Measures socket.connect()
@@ -145,6 +139,18 @@ def tcpping(host,port,nsamples,intergreen,timeout):
 
     #return failure count
     sys.exit(failed)
+
+@click.command()
+@click.option("-h","--host"       , default="google.com",      help="target host")
+@click.option("-p","--port"       , default=443,                help="tcp port")
+@click.option("-s","--nsamples"   , default=3,                 help="# of samples to attempt")
+@click.option("-i","--intergreen" , default=0,                 help="wait time (sec)")
+@click.option("-t","--timeout"    , default=1,                 help="socket timeout (sec)")
+def tcpping(host,port,nsamples,intergreen,timeout):
+    """
+    UI routine 
+    """
+    real_tcpping(host,port,nsamples,intergreen,timeout)
 
 if __name__ == "__main__":
     tcpping()
