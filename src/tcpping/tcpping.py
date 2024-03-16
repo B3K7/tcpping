@@ -41,12 +41,6 @@ def signal_handler(signum, frame):
 
 
 def real_tcpping(host,port,nsamples,intergreen,timeout):
-    """
-    A 'quick and dirty' tcp ping client
-    Measures socket.connect()
-    Measures the 3 way tcp handshake [client FoR]
-    Measures ACK SYN/ACK latency.
-    """
 
     #todo consider switching to ip ping
     #https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml
@@ -153,7 +147,12 @@ def real_tcpping(host,port,nsamples,intergreen,timeout):
 @click.option("-t","--timeout"    , default=1,                 help="socket timeout (sec)")
 def tcpping(host,port,nsamples,intergreen,timeout):
     """
-    UI routine 
+    Quick and Dirty' Tcp Ping Client
+    Measures socket.connect() latency
+    Measures the first 3 way tcp handshake from the client to the first application gateway.
+    ACK SYN/ACK latency to the firest application gateway.
+    Does not measure the latency of each and every distinct 3 way handshake between client and server.
+    Estimates the maximum reach of the first leg assuming copper cabling in meters.
     """
     real_tcpping(host,port,nsamples,intergreen,timeout)
 
