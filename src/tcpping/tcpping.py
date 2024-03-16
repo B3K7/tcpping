@@ -19,7 +19,7 @@ TODO:
 """
 
 import sys
-#import os
+import os
 import errno
 import socket
 import time
@@ -35,7 +35,7 @@ def signal_handler(signum, frame):
     """ Catch Ctrl-C and Exit """
     now = datetime.datetime.now().isoformat()
     name = signal.Signals(signum).name
-    line = {'program':sys.argv[0],'signal':str(signum), 'msg':name, 'time':now}
+    line = {'program':os.path.basename(sys.argv[0]),'signal':str(signum), 'msg':name, 'time':now}
     print(json.dumps(line),file=sys.stderr)
     sys.exit(0)
 
@@ -94,29 +94,33 @@ def real_tcpping(host,port,nsamples,intergreen,timeout):
 
             except socket.timeout as e:
                 now = datetime.datetime.now().isoformat()
-                line = {'program':sys.argv[0],'errno':e.errno, 'error':str(e),'msg':"Connection timed out.", 'host':host, 'port':port, 'count':count-1, 'time':now}
+                msg = type(e).__name__
+                line = {'program':os.path.basename(sys.argv[0]),'errno':e.errno, 'error':str(e),'msg':msg , 'host':host, 'port':port, 'count':count-1, 'time':now}
                 print(json.dumps(line),file=sys.stderr)
                 failed += 1
             except socket.gaierror as e:
                 #https://docs.python.org/3/library/socket.html#socket.socket.connect
                 now = datetime.datetime.now().isoformat()
-                line = {'programn':sys.argv[0],'errno':e.errno, 'error':str(e),'msg':"Socket gai error.", 'host':host, 'port':port, 'count':count-1, 'time':now}
+                msg = type(e).__name__
+                line = {'programn':os.path.basename(sys.argv[0]),'errno':e.errno, 'error':str(e),'msg':msg , 'host':host, 'port':port, 'count':count-1, 'time':now}
                 print(json.dumps(line),file=sys.stderr)
                 failed += 1
             except socket.error as e:
                 #https://docs.python.org/2/library/errno.html
                 now = datetime.datetime.now().isoformat()
                 failed += 1
+                msg = type(e).__name__
                 if e.errno in (errno.ECONNREFUSED, errno.EHOSTUNREACH):
-                    line = {'program':sys.argv[0],'errno':e.errno, 'error':str(e),'msg':"Socket error.", 'host':host, 'port':port, 'count':count-1, 'time':now}
+                    line = {'program':os.path.basename(sys.argv[0]),'errno':e.errno, 'error':str(e),'msg':msg, 'host':host, 'port':port, 'count':count-1, 'time':now}
                     print(json.dumps(line),file=sys.stderr)
                 else:
-                    line = {'program':sys.argv[0],'errno':e.errno,'error':str(e),'msg':"Socket error.", 'host':host, 'port':port, 'count':count-1, 'time':now}
+                    line = {'program':os.path.basename(sys.argv[0]),'errno':e.errno,'error':str(e),'msg':msg, 'host':host, 'port':port, 'count':count-1, 'time':now}
                     print(json.dumps(line),file=sys.stderr)
                     raise
             except OSError as e:
                 now = datetime.datetime.now().isoformat()
-                line = {'program':sys.argv[0],'errno':e.errno, 'error':str(e),'msg':"OS Error..", 'host':host, 'port':port, 'count':count-1, 'time':now}
+                msg = type(e).__name__
+                line = {'program':os.path.basename(sys.argv[0]),'errno':e.errno, 'error':str(e),'msg':msg, 'host':host, 'port':port, 'count':count-1, 'time':now}
                 print(json.dumps(line),file=sys.stderr)
                 failed += 1
 
