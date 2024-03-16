@@ -60,8 +60,9 @@ def real_tcpping(host,port,nsamples,intergreen,timeout):
 
     # Register SIGINT Handler
     signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGHUP, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
+
+    #signal.signal(signal.SIGHUP, signal_handler)
+    #signal.signal(signal.SIGTERM, signal_handler)
 
     # Loop while less than nsamples or until Ctrl-C caught
     while count < nsamples:
